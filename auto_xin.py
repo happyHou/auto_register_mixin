@@ -52,7 +52,15 @@ class AUTO_XIN(object):
         }
 
         self.sess = requests.Session()
-        self.sess.verify = './charles-ssl-proxying-certificate.pem'
+        # self.sess.verify = './charles-ssl-proxying-certificate.pem'
+        self.sess.proxies = self.proxies
+
+    def set_proxies(self, proxy_str):
+        self.proxies = {
+            "http": proxy_str,
+            "https": proxy_str,
+        }
+
         self.sess.proxies = self.proxies
 
     # get __cfduid
@@ -80,7 +88,10 @@ class AUTO_XIN(object):
             headers=self.headers,
             json=payload
         )
-        print resp.text
+        with open('test.txt', 'w') as f:
+            f.write(resp.text)
+
+         print resp.text
         rs = json.loads(resp.text)
         self.predata['type'] = rs['data']['type']
         self.predata['id'] = rs['data']['id']
@@ -239,11 +250,32 @@ class EMA666(object):
         )
 
 
+class PROXY(object):
+    def __init__(self):
+        self.getProxyUrl = 'http://pvt.daxiangdaili.com/ip/'
+        self.proxyConfig = {
+            'tid': '558544056549863',
+            'num': '1',
+            'protocol': 'https',
+        }
+
+    def getProxy(self):
+        resp = requests.get(
+            self.getProxyUrl,
+            params=self.proxyConfig
+
+        )
+        return resp.text
+
+
 def main(options):
     count = 1
     xin = AUTO_XIN()
     # xin.demoHttps()
     ema666 = EMA666()
+    proxy = PROXY()
+    proxyStr = proxy.getProxy()
+    xin.set_proxies(proxyStr)
     ema666.login()
     ema666.releaseAllPhone()
     phone_arr = ema666.getPhone()
@@ -263,6 +295,11 @@ def main(options):
             break
 
 
+def testPorxy(options):
+    proxy = PROXY()
+    proxy.getProxy()
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Simulate to login Jing Dong, and buy sepecified good')
@@ -276,6 +313,7 @@ if __name__ == '__main__':
     options.wait = 5
     # 最做重试次数
     options.tryCount = 10
+
 
     while True:
         main(options)
