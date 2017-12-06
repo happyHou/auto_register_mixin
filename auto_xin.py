@@ -92,7 +92,7 @@ class AUTO_XIN(object):
     def verifications(self, options):
         print '+++++++++++step3+++++++++++'
         print '+++++++++++input Verification code begin+++++++++++'
-        url = self.sendSMSUrl + self.predata['id']
+        url = self.sendSMSUrl + '/' + self.predata['id']
         payload = {
             'code': options.code,
             'phone': '+8613466334619',
@@ -105,11 +105,12 @@ class AUTO_XIN(object):
             url,
             json=payload
         )
+
+        print resp.text
         rs = json.loads(resp.text)
         self.predata['uid'] = rs['data']['user_id']
         self.predata['sid'] = rs['data']['session_id']
         self.predata['token'] = rs['data']['authentication_token']
-        print resp.text
 
         print '+++++++++++input Verification code end+++++++++++'
 
@@ -118,13 +119,12 @@ class AUTO_XIN(object):
         private_key = self.predata['token']
         palyload = {
             'sub': self.predata['uid'],
-            'jti': self.predata['jti'],
+            'jti': self.predata['sid'],
             'exp': str(int(time.time() + 300))
         }
-        authentication = 'Bearer ' + base64.b64encode(
-            json.dumps(self.generation)) + '.' + jwt.encode(palyload,
-                                                            private_key,
-                                                            algorithm='RS512')
+        authentication = 'Bearer ' + jwt.encode(palyload,
+                                                private_key,
+                                                algorithm='RS512')
 
         palyload = {
             'full_name': options.name
@@ -135,7 +135,7 @@ class AUTO_XIN(object):
             json=palyload,
             headers=headers
         )
-        if resp.status_code != requests.codes.OK:
+        if resp.status_code == requests.codes.OK:
             print 'success'
             print resp.text
         else:
@@ -159,7 +159,14 @@ class EMA666(object):
         self.getItemUrl = 'http://api.ema666.com/Api/userGetItems'
         self.getPhoneUrl = 'http://api.ema666.com/Api/userGetPhone'
         self.getMessageUrl = 'http://api.ema666.com/Api/userSingleGetMessage'
+        self.releaseAllPhoen = 'http://api.ema666.com/Api/userReleaseAllPhone'
+
+        self.proxies = {
+            "http": "127.0.0.1:8888",
+            "https": "127.0.0.1:8888",
+        }
         self.sess = requests.Session()
+        self.sess.proxies = self.proxies
         self.token = {}
 
     def login(self):
@@ -203,31 +210,57 @@ class EMA666(object):
         )
         return '+86' + resp.text[0: -1], resp.text[0:-1]
 
+        # 'False:没有短信，请5秒后再试'
+        # 'MSG&Mixin code 1415 [PIN]
+
     def getMessage(self, options):
         payload = {'token': self.token,
-                   'ItemId': self.user['ItemId'],
+                   'itemId': self.user['ItemId'],
                    'phone': options.truePhone
                    }
         resp = self.sess.get(
             self.getMessageUrl,
             params=payload
         )
-        print resp.text
+        rs = resp.text
+        print rs
+        if rs.startswith('False'):
+            return False
+        else:
+            options.code = rs.split(' ')[2]
+            print options.code
+            return True
+
+    def releaseAllPhone(self):
+        payload = {'token': self.token}
+        resp = self.sess.get(
+            self.releaseAllPhoen,
+            params=payload
+        )
 
 
 def main(options):
+    count = 1
     xin = AUTO_XIN()
     # xin.demoHttps()
-    # ema666 = EMA666()
-    # ema666.login()
-    # phone_arr = ema666.getPhone()[0]
-    # options.phone = phone_arr[0]
-    # options.truePhone = phone_arr[1]
+    ema666 = EMA666()
+    ema666.login()
+    ema666.releaseAllPhone()
+    phone_arr = ema666.getPhone()
+    options.phone = phone_arr[0]
+    options.truePhone = phone_arr[1]
     xin.getCookie(options)
     xin.sendSMS(options)
-    # ema666.getMessage(options);
-    # xin.verifications(options)
-    # xin.setUserName(options)
+
+    while True:
+        print '开始轮训:' + str(count)
+        count += 1
+        time.sleep(options.wait)
+        if ema666.getMessage(options):
+            print '轮训end'
+            xin.verifications(options)
+            xin.setUserName(options)
+            break
 
 
 if __name__ == '__main__':
@@ -236,7 +269,13 @@ if __name__ == '__main__':
     options = parser.parse_args()
     options.invitationCode = '802847'
     options.phone = '+8615020978071'
+    # 验证码
     options.code = '0904'
     options.name = 'random99'
+    # 等待5s后请求短信内容
+    options.wait = 5
+    # 最做重试次数
+    options.tryCount = 10
 
-    main(options)
+    while True:
+        main(options)
