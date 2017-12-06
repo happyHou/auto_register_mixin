@@ -24,7 +24,7 @@ sys.setdefaultencoding('utf-8')
 class AUTO_XIN(object):
     def __init__(self, userId=None):
         self.registerUrl = 'https://mixin.one/enroll/'
-        self.sendSMSUrl = 'https://api.mixin.one/verifications/'
+        self.sendSMSUrl = 'https://api.mixin.one/verifications'
         self.setUserNameUrl = 'https://api.mixin.one/me'
 
         self.proxies = {
