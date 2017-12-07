@@ -17,3 +17,9 @@ autu_xin.py程序
 
 2./charles-ssl-proxying-certificate.pem charles代理截取https的cert文件
 3.auxin.chls charles的截包软件。通过charles->file->import...导入查看
+
+#需要修改的地方（不要用我的钱呀）在screen_shot中有截图
+- 注册大象代理
+- 注册ema666并添加收藏
+    1.收藏mixin
+- 修改为你自己的邀请码
