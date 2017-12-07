@@ -53,7 +53,8 @@ class AUTO_XIN(object):
 
         self.sess = requests.Session()
         # self.sess.verify = './charles-ssl-proxying-certificate.pem'
-        self.sess.proxies = self.proxies
+        # self.sess.proxies = self.proxies
+        self.sess.times=20
 
     def set_proxies(self, proxy_str):
         self.proxies = {
@@ -82,16 +83,16 @@ class AUTO_XIN(object):
         payload = {'phone': options.phone, 'purpose': 'SESSION'}
         # self.headers['Referer'] = self.registerUrl + options.invitationCode
         # self.headers['Origin'] = 'https://mixin.one'
-        # self.headers['Authorization'] = 'Bearer'
+        self.headers['Authorization'] = 'Bearer'
         resp = self.sess.post(
             self.sendSMSUrl,
             headers=self.headers,
             json=payload
         )
-        with open('test.txt', 'w') as f:
+        with open('test.html', 'w') as f:
             f.write(resp.text)
 
-         print resp.text
+        print resp.text
         rs = json.loads(resp.text)
         self.predata['type'] = rs['data']['type']
         self.predata['id'] = rs['data']['id']
@@ -123,6 +124,9 @@ class AUTO_XIN(object):
         self.predata['sid'] = rs['data']['session_id']
         self.predata['token'] = rs['data']['authentication_token']
 
+        with open('user_lists', 'a') as f:
+            f.write(rs['data']['full_name'] + '\n')
+
         print '+++++++++++input Verification code end+++++++++++'
 
     def setUserName(self, options):
@@ -152,6 +156,28 @@ class AUTO_XIN(object):
         else:
             print 'error'
 
+    def getUserName(self,options):
+        print '+++++++++++step5+++++++++++'
+        private_key = self.predata['token']
+
+        palyload = {
+            'sub': self.predata['uid'],
+            'jti': self.predata['sid'],
+            'exp': str(int(time.time() + 300))
+        }
+        authentication = 'Bearer ' + jwt.encode(palyload,
+                                                private_key,
+                                                algorithm='RS512')
+
+
+        headers = {'authorization': authentication}
+        resp = self.sess.get(
+            self.setUserNameUrl,
+            headers=headers
+        )
+
+        print resp.text
+
     def demoHttps(self):
         resp = self.sess.get(
             'https://www.baidu.com'
@@ -162,8 +188,8 @@ class AUTO_XIN(object):
 class EMA666(object):
     def __init__(self):
         self.user = {
-            'userName': 'chg999',
-            'passWord': '123456',
+            'userName': 'xixihou',
+            'passWord': '6TJ1ym6J1Z',
             'ItemId': '58012',
         }
         self.loginUrl = 'http://api.ema666.com/Api/userLogin'
@@ -177,7 +203,7 @@ class EMA666(object):
             "https": "127.0.0.1:8888",
         }
         self.sess = requests.Session()
-        self.sess.proxies = self.proxies
+        # self.sess.proxies = self.proxies
         self.token = {}
 
     def login(self):
@@ -275,6 +301,7 @@ def main(options):
     ema666 = EMA666()
     proxy = PROXY()
     proxyStr = proxy.getProxy()
+    print proxyStr
     xin.set_proxies(proxyStr)
     ema666.login()
     ema666.releaseAllPhone()
@@ -287,11 +314,14 @@ def main(options):
     while True:
         print '开始轮训:' + str(count)
         count += 1
+        if count > options.tryCount:
+            return
         time.sleep(options.wait)
         if ema666.getMessage(options):
             print '轮训end'
             xin.verifications(options)
             xin.setUserName(options)
+            xin.getUserName(options)
             break
 
 
@@ -314,6 +344,10 @@ if __name__ == '__main__':
     # 最做重试次数
     options.tryCount = 10
 
-
     while True:
-        main(options)
+        try:
+            main(options)
+        except:
+            print "Unexpected error:", sys.exc_info()[0]
+            raise
+
