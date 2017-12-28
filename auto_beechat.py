@@ -15,6 +15,14 @@ import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
+"""ema666"""
+userName = ""
+passWord = ""
+ItemId = ""
+"""代理"""
+tid = ""
+haha=""
+
 
 class AUTO_XIN(object):
     def __init__(self, userId=None):
@@ -46,7 +54,7 @@ class AUTO_XIN(object):
         self.sess = requests.Session()
         # self.sess.verify = './charles-ssl-proxying-certificate.pem'
         # self.sess.proxies = self.proxies
-        self.sess.timeout = 20
+        self.sess.timeout = 10
 
     def set_proxies(self, options):
         self.proxies = {
@@ -107,11 +115,7 @@ class AUTO_XIN(object):
 
 class EMA666(object):
     def __init__(self):
-        self.user = {
-            'userName': 'xixihou',
-            'passWord': '6TJ1ym6J1Z',
-            'ItemId': '58390',
-        }
+
         self.loginUrl = 'http://api.ema666.com/Api/userLogin'
         self.getItemUrl = 'http://api.ema666.com/Api/userGetItems'
         self.getPhoneUrl = 'http://api.ema666.com/Api/userGetPhone'
@@ -127,8 +131,8 @@ class EMA666(object):
         self.token = {}
 
     def login(self):
-        payload = {'uName': self.user['userName'],
-                   'pWord': self.user['passWord'],
+        payload = {'uName': userName,
+                   'pWord': passWord,
                    'Code': 'UTF8'
                    }
         resp = self.sess.get(
@@ -141,7 +145,7 @@ class EMA666(object):
 
     def get_phone_number(self):
         payload = {'token': self.token,
-                   'ItemId': self.user['ItemId'],
+                   'ItemId': ItemId,
                    'Code': 'UTF8'
                    }
         resp = self.sess.get(
@@ -155,7 +159,7 @@ class EMA666(object):
 
     def getMessage(self, options):
         payload = {'token': self.token,
-                   'itemId': self.user['ItemId'],
+                   'itemId': ItemId,
                    'phone': options.phone
                    }
         resp = self.sess.get(
@@ -184,7 +188,7 @@ class PROXY(object):
     def __init__(self):
         self.getProxyUrl = 'http://pvt.daxiangdaili.com/ip/'
         self.proxyConfig = {
-            'tid': '558544056549863',
+            'tid': tid,
             'num': '1',
             'protocol': 'https',
         }
@@ -231,6 +235,7 @@ def go_go_money(options):
             xin.set_code(options)
             xin.set_user_name(options)
             user_name = xin.get_user_info(options)
+            print "设置的用户名"+userName
             log_utils('name:' + user_name)
             break
 
@@ -256,9 +261,28 @@ def main(options):
             print "Unexpected error:", sys.exc_info()[0]
 
 
+def set_config(options):
+    with open('config.json', 'r') as f:
+        config = json.load(f)
+
+    options.invitationCode = config['DEFAULT']['base']['invitationCode']
+    options.tryCount = config['DEFAULT']['base']['tryCount']
+    options.name = config['DEFAULT']['base']['registerName']
+
+    global userName
+    global passWord
+    global ItemId
+    global tid
+    userName = config['DEFAULT']['SMS']['userName']
+    passWord = config['DEFAULT']['SMS']['passWord']
+    ItemId = config['DEFAULT']['SMS']['ItemId']
+
+    tid = config['DEFAULT']['proxy']['tid']
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='demo')
+        description='这仅仅是一个demo')
     options = parser.parse_args()
     options.invitationCode = '2702148'
     options.phone = '17075339183'
@@ -269,5 +293,7 @@ if __name__ == '__main__':
     options.wait = 5
     # 最做重试次数
     options.tryCount = 10
+
+    set_config(options)
 
     main(options)
