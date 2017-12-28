@@ -6,15 +6,10 @@ import requests.packages.urllib3
 
 requests.packages.urllib3.disable_warnings()
 import re
-import os
 import time
 import json
-import random
 
 import argparse
-# from selenium import webdriver
-import jwt
-import base64
 import sys
 
 reload(sys)
@@ -40,10 +35,6 @@ class AUTO_XIN(object):
             'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
             'Connection': 'keep-alive',
         }
-        self.generation = {
-            "alg": "RS512",
-            "typ": "JWT"
-        }
 
         self.cookies = {
             "inviteCode": options.invitationCode,
@@ -57,19 +48,15 @@ class AUTO_XIN(object):
         # self.sess.proxies = self.proxies
         self.sess.timeout = 20
 
-    def set_proxies(self, proxy_str):
+    def set_proxies(self, options):
         self.proxies = {
-            "http": proxy_str,
-            "https": proxy_str,
+            "http": options.proxy_str,
+            "https": options.proxy_str,
         }
 
         self.sess.proxies = self.proxies
 
     def send_sms(self, options):
-        print '+++++++++++send SMS begin+++++++++++'
-        print options.phone
-        print self.sendSMSUrl
-        print options.phone
         payload = {
             'phone': options.phone,
             'countryCode': '86'
@@ -80,20 +67,13 @@ class AUTO_XIN(object):
             params=payload,
             cookies=self.cookies,
         )
-        print resp.text
-
         rs = json.loads(resp.text)
         if rs['code'] is 0:
-            print 'code =0'
             return True
         else:
-            print 'code =52'
             return False
-        print '+++++++++++send SMS end+++++++++++'
 
     def set_code(self, options):
-        print options.phone
-        print options.code
         payload = {
             'uid': "86" + options.phone,
             'code': options.code
@@ -104,88 +84,25 @@ class AUTO_XIN(object):
             params=payload,
             cookies=self.cookies,
         )
-        print resp.text
 
-    def verifications(self, options):
-        print '+++++++++++step3+++++++++++'
-        print '+++++++++++input Verification code begin+++++++++++'
-        url = self.sendSMSUrl + '/' + self.predata['id']
+    def set_user_name(self, options):
         payload = {
-            'code': options.code,
-            'phone': '+8613466334619',
-            'invitation_code': options.invitationCode,
-            'verification_id': self.predata['id'],
-            'purpose': 'SESSION',
-            'platform': 'Web'
-        }
-        resp = self.sess.post(
-            url,
-            json=payload
-        )
-
-        print resp.text
-        rs = json.loads(resp.text)
-        self.predata['uid'] = rs['data']['user_id']
-        self.predata['sid'] = rs['data']['session_id']
-        self.predata['token'] = rs['data']['authentication_token']
-
-        with open('user_lists', 'a') as f:
-            f.write(rs['data']['full_name'] + '\n')
-
-        print '+++++++++++input Verification code end+++++++++++'
-
-    def setUserName(self, options):
-        print '+++++++++++step4+++++++++++'
-        palyload = {
             "name": options.name
         }
 
         resp = self.sess.post(
             self.setUserNameUrl,
-            params=palyload,
+            params=payload,
             headers=self.headers
         )
-        if resp.status_code == requests.codes.OK:
-            print 'success'
-            for item in resp.headers:
-                print item
-            print resp.text
-        else:
-            print 'error'
 
     def get_user_info(self, options):
         resp = self.sess.get(
             self.getUserInfoUrl,
         )
-        print resp.headers
-        print resp.text
 
-    def getUserName(self, options):
-        print '+++++++++++step5+++++++++++'
-        private_key = self.predata['token']
-
-        palyload = {
-            'sub': self.predata['uid'],
-            'jti': self.predata['sid'],
-            'exp': str(int(time.time() + 300))
-        }
-        authentication = 'Bearer ' + jwt.encode(palyload,
-                                                private_key,
-                                                algorithm='RS512')
-
-        headers = {'authorization': authentication}
-        resp = self.sess.get(
-            self.setUserNameUrl,
-            headers=headers
-        )
-
-        print resp.text
-
-    def demoHttps(self):
-        resp = self.sess.get(
-            'https://www.baidu.com'
-        )
-        print resp.text
+        rs = json.loads(resp.text)
+        return rs['data']['name']
 
 
 class EMA666(object):
@@ -220,27 +137,9 @@ class EMA666(object):
         rs = resp.text.split('&')
         self.token = rs[0]
 
-        print u'token：{0}'.format(rs[0])
         print u'账户余额：{0}'.format(rs[1])
-        print u'最大登录客户端：{0}'.format(rs[2])
-        print u'最多获取号码数：{0}'.format(rs[3])
-        print u'单个客户端最多获取号码数：{0}'.format(rs[4])
-        print u'折扣：{0}'.format(rs[5])
 
-    """暂时用不到"""
-
-    def getItems(self):
-        payload = {'token': self.token,
-                   'tp': 'ut',
-                   'Code': 'UTF8'
-                   }
-        resp = self.sess.get(
-            self.getItemUrl,
-            params=payload
-        )
-        print resp.text
-
-    def getPhone(self):
+    def get_phone_number(self):
         payload = {'token': self.token,
                    'ItemId': self.user['ItemId'],
                    'Code': 'UTF8'
@@ -264,14 +163,12 @@ class EMA666(object):
             params=payload
         )
         rs = resp.text
-        print rs
         if rs.startswith('False'):
             return False
         else:
             matchObj = re.search(r'(\d{4})', rs)
             if matchObj:
                 options.code = matchObj.group()
-                print options.code
                 return True
             return True
 
@@ -292,34 +189,35 @@ class PROXY(object):
             'protocol': 'https',
         }
 
-    def getProxy(self):
+    def get_proxy(self):
         resp = requests.get(
             self.getProxyUrl,
             params=self.proxyConfig
 
         )
+
+        log_utils('proxy:' + resp.text)
         return resp.text
 
 
-def main(options):
+def go_go_money(options):
     count = 1
     xin = AUTO_XIN()
-    # xin.demoHttps()
     ema666 = EMA666()
-    proxy = PROXY()
-    proxyStr = proxy.getProxy()
-    print proxyStr
-    xin.set_proxies(proxyStr)
+    xin.set_proxies(options)
     ema666.login()
     ema666.releaseAllPhone()
-    options.phone = ema666.getPhone()
+    options.phone = ema666.get_phone_number()
+    print "手机号码为：" + options.phone
+    log_utils('phoneNumber:' + options.phone)
     if xin.send_sms(options):
-        print 'ok'
+        print "发送短信成功"
+        pass
     else:
-        print 'not ok'
+        print "该ip请求次数超限,获取新代理"
+        time.sleep(options.wait)
+        get_new_proxy(options)
         return
-
-    print '>>>>>'
 
     while True:
         print '开始轮训:' + str(count)
@@ -328,18 +226,34 @@ def main(options):
             return
         time.sleep(options.wait)
         if ema666.getMessage(options):
+            print "验证码为：" + options.code
+            log_utils('code:' + options.code)
             xin.set_code(options)
-            xin.setUserName(options)
-            xin.get_user_info(options)
+            xin.set_user_name(options)
+            user_name = xin.get_user_info(options)
+            log_utils('name:' + user_name)
             break
 
 
-def test(options):
-    xin = AUTO_XIN()
-    xin.send_sms(options)
-    xin.set_code(options)
-    xin.setUserName(options)
-    xin.get_user_info(options)
+def log_utils(log_str):
+    with open('log.txt', 'a') as f:
+        f.write(log_str + '\n')
+
+
+def get_new_proxy(options):
+    proxy = PROXY()
+    options.proxy_str = proxy.get_proxy()
+    print "使用代理：" + options.proxy_str
+
+
+def main(options):
+    get_new_proxy(options)
+    while True:
+        try:
+            go_go_money(options)
+        except:
+            get_new_proxy(options)
+            print "Unexpected error:", sys.exc_info()[0]
 
 
 if __name__ == '__main__':
@@ -356,8 +270,4 @@ if __name__ == '__main__':
     # 最做重试次数
     options.tryCount = 10
 
-    while True:
-        try:
-            main(options)
-        except:
-            print "Unexpected error:", sys.exc_info()[0]
+    main(options)
