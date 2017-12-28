@@ -54,7 +54,7 @@ class AUTO_XIN(object):
         self.sess = requests.Session()
         # self.sess.verify = './charles-ssl-proxying-certificate.pem'
         # self.sess.proxies = self.proxies
-        self.sess.times=20
+        self.sess.timeout=20
 
     def set_proxies(self, proxy_str):
         self.proxies = {
@@ -299,30 +299,32 @@ def main(options):
     xin = AUTO_XIN()
     # xin.demoHttps()
     ema666 = EMA666()
-    proxy = PROXY()
-    proxyStr = proxy.getProxy()
-    print proxyStr
-    xin.set_proxies(proxyStr)
-    ema666.login()
-    ema666.releaseAllPhone()
-    phone_arr = ema666.getPhone()
-    options.phone = phone_arr[0]
-    options.truePhone = phone_arr[1]
-    xin.getCookie(options)
-    xin.sendSMS(options)
+    # proxy = PROXY()
+    # proxyStr = proxy.getProxy()
+    # print proxyStr
+    # xin.set_proxies(proxyStr)
+    # ema666.login()
+    # ema666.releaseAllPhone()
+    # phone_arr = ema666.getPhone()
+    # options.phone = phone_arr[0]
+    # options.truePhone = phone_arr[1]
+    # xin.getCookie(options)
+    # xin.sendSMS(options)
+    #
+    # while True:
+    #     print '开始轮训:' + str(count)
+    #     count += 1
+    #     if count > options.tryCount:
+    #         return
+    #     time.sleep(options.wait)
+    #     if ema666.getMessage(options):
+    #         print '轮训end'
+    #         xin.verifications(options)
+    #         xin.setUserName(options)
+    #         xin.getUserName(options)
+    #         break
 
-    while True:
-        print '开始轮训:' + str(count)
-        count += 1
-        if count > options.tryCount:
-            return
-        time.sleep(options.wait)
-        if ema666.getMessage(options):
-            print '轮训end'
-            xin.verifications(options)
-            xin.setUserName(options)
-            xin.getUserName(options)
-            break
+    ema666.getMessage(options)
 
 
 def testPorxy(options):
@@ -334,7 +336,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Simulate to login Jing Dong, and buy sepecified good')
     options = parser.parse_args()
-    options.invitationCode = '802847'
+    options.invitationCode = '816956'
     options.phone = '+8615020978071'
     # 验证码
     options.code = '0904'
@@ -349,5 +351,4 @@ if __name__ == '__main__':
             main(options)
         except:
             print "Unexpected error:", sys.exc_info()[0]
-            raise
 
