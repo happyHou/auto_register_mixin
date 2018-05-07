@@ -64,6 +64,25 @@ class AUTO_XIN(object):
 
         self.sess.proxies = self.proxies
 
+    def visit_official_website(self,options):
+        pass
+
+
+        headers = {
+            'Host': 'best.bi',
+            'Pragma': 'no-cache',
+            'Cache-Control': 'no-cache',
+            'Upgrade-Insecure-Requests': '1',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.84 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+            'DNT': '1',
+            'Accept-Language': 'zh-CN,zh;q=0.9',
+        }
+
+        response = requests.get('http://best.bi/t/252787', headers=headers, cookies=cookies)
+
+
+
     def send_sms(self, options):
         payload = {
             'phone': options.phone,
@@ -284,7 +303,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='这仅仅是一个demo')
     options = parser.parse_args()
-    options.invitationCode = '2702148'
+    options.invitationCode = '252787'
     options.phone = '17075339183'
     # 验证码
     options.code = '0904'
@@ -293,7 +312,8 @@ if __name__ == '__main__':
     options.wait = 5
     # 最做重试次数
     options.tryCount = 10
+    print 'hi'
 
-    set_config(options)
+    # set_config(options)
 
-    main(options)
+    # main(options)

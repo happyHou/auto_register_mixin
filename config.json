@@ -2,16 +2,16 @@
   "DEFAULT": {
     "proxy":{
       "_comment":"daxiangdaili.com的订单号",
-      "tid":"558544056549863"
+      "tid":""
     },
     "SMS":{
       "_comment":"ema666.com的账号密码!!!!一定要收藏这个项目id！！！",
-      "userName":"xixihou",
-      "passWord":"6TJ1ym6J1Z",
-      "ItemId":"58390"
+      "userName":"",
+      "passWord":"",
+      "ItemId":""
     },
     "base":{
-      "invitationCode":"2702148",
+      "invitationCode":"252787",
       "tryCount":10,
       "registerName":"luobobo"
     }
